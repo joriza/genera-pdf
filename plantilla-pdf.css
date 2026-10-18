@@ -1,0 +1,179 @@
+/* =====================================================================
+   plantilla-pdf.css  ·  PLANTILLA CANONICA DEL PIPELINE PDF
+   Estilos para imprimir .md a PDF con Chrome/Edge headless (motor Blink),
+   usados por generar-pdf.ps1. Esta es la UNICA plantilla: vive junto al
+   script en esta carpeta y ningun proyecto mantiene copias propias.
+
+   CONTRATO DE GENERACION — que es estatico y que se inyecta inline
+   La plantilla NO se edita por proyecto ni por generacion. En cada
+   corrida, el script parchea SOLO estos cuatro puntos (con regex
+   verificado: si un parche no matchea, corta con error en vez de seguir
+   en silencio):
+     1. margin del @page base ......... -MargenVertical y -MargenLateral
+        (simetrico), o -MargenLomo/-MargenExterno (espejados, por defecto).
+     2. [[ENCABEZADO]] ................ bloque @top-center con el NOMBRE
+        DEL ARCHIVO (sin extension) de cada documento; nada con
+        -SinEncabezado. Inline porque Blink no implementa string-set.
+     3. [[ESPEJADO]] .................. bloques @page :right/:left con los
+        margenes espejados y la FECHA DE GENERACION (ISO-8601, solo fecha)
+        en la esquina del lomo del pie; en modo simetrico, un @page
+        adicional con la fecha abajo a la izquierda. Inline por lo mismo.
+     4. column-count del body ......... -Columnas (1 por defecto; dos
+        columnas solo a pedido explicito).
+   ESTATICO (no se toca por proyecto): tipografia y tamanos, colores,
+   tablas, reglas de corte, reseteo de margenes propios de Blink, y el pie
+   con contador de paginas. Cambiar algo de esto es un cambio de ESTANDAR:
+   se hace aqui una vez y alcanza a todos los PDF futuros.
+
+   MOTOR: Blink (Chrome/Edge), no wkhtmltopdf. QtWebKit 4.8 escala el CSS
+   ~0,80 e ignora @page, line-height, column-count y el fallback por
+   glifo; Blink obedece todo y sale determinista byte a byte (el script
+   normaliza las 2 fechas de metadatos; -Verify lo comprueba).
+
+   ESTANDAR VIGENTE (2026-10-17): A4; 1,5 cm arriba y abajo; costados
+   espejados lomo 1,5 cm / externo 1 cm; interlineado 1,3; cuerpo 11 pt;
+   UNA columna por defecto.
+   ===================================================================== */
+@page {
+  size: A4;
+  /* 1,5 cm arriba y abajo; a los costados, lomo 1,5 cm y externo 1 cm
+     (estándar desde 2026-10-17). El @page base toma la configuración de la
+     hoja impar (lomo a la izquierda). Sale 1:1; el script reescribe estos
+     valores y por eso los defaults del script son exactamente estos. */
+  margin: 1.5cm 1cm 1.5cm 1.5cm;
+  /* Encabezado con el nombre del documento, arriba al centro. El nombre es por
+     documento, asi que no puede estar escrito aca: el script reemplaza la marca
+     de abajo por el bloque @top-center y, con -SinEncabezado, por nada. Medido:
+     Blink NO puede sacar el nombre del contenido por su cuenta (string-set /
+     string() no funciona), asi que la unica via es inyectarlo en el CSS. */
+  /*[[ENCABEZADO]]*/
+  /* Pie de pagina desde el CSS: contador centrado. La fecha de generacion la
+     inyecta el script en la esquina del lomo (@bottom-left en la impar,
+     @bottom-right en la par; en simetrico, siempre @bottom-left). Reemplaza a
+     --footer-center '[page]/[topage]'. */
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font-size: 8pt;
+    color: #555555;
+  }
+}
+
+/* Margenes espejados: el lomo cae siempre del lado de la costura y alterna en
+   cada hoja, aunque el documento sea de una sola pagina, porque los cuatro
+   documentos del kit se anillan juntos. Es el modo POR DEFECTO del script: esta
+   marca se reemplaza SIEMPRE por los bloques @page :right / @page :left; solo
+   -MargenLateral la reemplaza por un @page sin espejado y vuelve al modo
+   simetrico (hojas de un solo lado). Los bloques que inyecta el script llevan
+   ademas la fecha de generacion en la esquina del lomo. Medido en Blink: :right
+   es la hoja impar (la 1 lo es) y :left la par; el ancho de texto es el mismo en
+   las dos, y el encabezado y el pie no mueven la cantidad de hojas porque viven
+   dentro del margen. */
+/*[[ESPEJADO]]*/
+
+body {
+  font-family: Arial, Helvetica, "Segoe UI Emoji", sans-serif;
+  font-size: 11pt;
+  /* 1,3 = 14,3 pt de paso entre líneas. Con v2 declaraba 1,5 y no se
+     imprimía (ver el encabezado). */
+  line-height: 1.3;
+  color: #1a1a1a;
+  margin: 0;
+
+  /* Texto corrido a UNA columna (regla desde 2026-10-17: dos columnas solo
+     a pedido explícito con -Columnas). El script reescribe este valor. Lo
+     que ocupa todo el ancho (el titulo principal y las tablas) lleva
+     column-span: all, preparado por si se vuelve a 2 columnas. */
+  column-count: 1;
+  column-gap: 0.9cm;
+}
+
+h1 {
+  color: #1a5276;
+  font-size: 20pt;
+  font-weight: bold;
+  border-bottom: 2px solid #1a5276;
+  padding-bottom: 4px;
+  margin: 0.3em 0 1em;
+  column-span: all;
+  -webkit-column-span: all;
+}
+
+h2 {
+  color: #1a5276;
+  font-size: 1.7em;
+  font-weight: bold;
+  border-bottom: 2px solid #aeb6bf;
+  padding-bottom: 0.4em;
+  margin: 2.5em 0 1em;
+}
+
+h3 {
+  color: #2874a6;
+  font-size: 1.4em;
+  font-weight: bold;
+  border-bottom: 1px solid #d0d3d4;
+  padding-bottom: 0.3em;
+  margin: 2em 0 0.8em;
+}
+
+h4 {
+  color: #34495e;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin: 1.5em 0 0.5em;
+}
+
+a { color: #007bff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:not(pre):not(.hljs) > code {
+  color: #333333;
+  background-color: #f0f0f0;
+  font-weight: bold;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 10pt;
+  /* Una tabla partida entre columnas no se lee: ocupa todo el ancho. */
+  column-span: all;
+  -webkit-column-span: all;
+}
+
+th, td {
+  border: 1px solid #aab7b8;
+  padding: 5px 7px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th { background: #d6eaf8; }
+
+blockquote {
+  border-left: 4px solid #f39c12;
+  background: #fef9e7;
+  margin: 10px 0;
+  padding: 6px 12px;
+}
+
+ul, ol { margin: 6px 0; }
+li { margin: 2px 0; }
+
+/* Reseteo que en wkhtmltopdf no hace falta y en Blink si: el navegador trae su
+   propia hoja de estilos con 1em de margen arriba y abajo en cada <p> y en cada
+   lista. El WebKit viejo de wkhtmltopdf no los aplicaba, por eso la plantilla
+   nunca los toco. Medido en el cuaderno: sin este reseteo Chrome mete 31 lineas
+   por hoja contra 46 de wkhtmltopdf, y el documento pasa de 8 a 13 hojas. */
+p { margin: 0 0 0.5em 0; }
+ul, ol { margin: 0 0 0.5em 0; padding-left: 1.35em; }
+
+/* Que ningun titulo quede solo al pie de pagina ni se parta al medio una fila
+   de tabla, un item de lista o una cita. Se declaran las dos sintaxis: la
+   vieja (page-break-*) y la moderna (break-*), porque Blink prefiere la
+   moderna. */
+h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
+tr, li, blockquote { page-break-inside: avoid; break-inside: avoid; }
