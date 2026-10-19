@@ -7,6 +7,11 @@
 .DESCRIPTION
     Pipeline:
       1. pandoc : <doc>.md -> _gen.tmp.html (con plantilla-pdf.css)
+         El lector es markdown SIN matematica TeX (-tex_math_dollars
+         desactivado): los $ del texto son literales y nunca formulas.
+         Los markdown de esta familia no usan LaTeX, por regla del
+         estandar (defecto medido 2026-10-18: pandoc se tragaba una
+         tabla completa de un documento de Excel).
       2. chrome : _gen.tmp.html -> <doc>.pdf
       3. normalizar: reemplaza las fechas del PDF por una constante
 
@@ -62,8 +67,9 @@
     tiene sentido en modo espejado.
 
 .PARAMETER MargenVertical
-    Margen superior e inferior del PDF, con unidad (1.5cm, 15mm, 1in).
-    Por defecto: 1.5cm, el valor declarado en el @page de la plantilla.
+    Margen superior e inferior del PDF, con unidad (1.2cm, 15mm, 1in).
+    Por defecto: 1.2cm, el valor declarado en el @page de la plantilla
+    (estandar desde 2026-10-18; antes 1.5cm).
 
 .PARAMETER MargenLomo
     Margen del lado del lomo (en la hoja impar, la izquierda; en la par, la
@@ -79,7 +85,13 @@
 
 .PARAMETER Columnas
     Cantidad de columnas del texto corrido, para todos los documentos. Por
-    defecto: 1. Dos columnas solo a pedido explicito (-Columnas 2).
+    defecto: 1. Dos columnas solo a pedido explicito (-Columnas 2). Un
+    trifoliar en A4 apaisado lleva 3.
+
+.PARAMETER Orientacion
+    'vertical' (por defecto) o 'apaisado' (A4 landscape), para trifoliares y
+    tableros. Un trifoliar apaisado son 2 paginas (frente y verso) de 3
+    columnas: impresas al doble dan las 6-paneles en una sola hoja.
 
 .PARAMETER SinEncabezado
     No imprime el encabezado con el nombre del documento en el margen
@@ -89,12 +101,17 @@
     Genera cada PDF dos veces y compara los hashes SHA256 para comprobar el
     determinismo. Tarda el doble.
 
+.PARAMETER Ayuda
+    Muestra el resumen de uso y parametros (alias: -h, -help) y no genera
+    nada. Es el mismo resumen que esta ayuda de referencia rapida.
+
 .EXAMPLE
     generar-pdf.ps1                          # los .md de la carpeta actual
     generar-pdf.ps1 -Verify                  # doble generacion + hashes
     generar-pdf.ps1 -Doc clase-1             # un solo documento
     generar-pdf.ps1 -Dir D:\cursos\excel     # otra carpeta
     generar-pdf.ps1 -Columnas 2              # dos columnas, solo a pedido
+    generar-pdf.ps1 -Orientacion apaisado -Columnas 3   # trifoliar: 6 paneles
     generar-pdf.ps1 -SinEncabezado
     generar-pdf.ps1 -MargenLateral 2.5cm     # modo simetrico (un solo lado)
 #>
@@ -104,15 +121,53 @@ param(
     [string[]]$Doc,
     [string]$Dir,
     [string]$MargenLateral = '2.5cm',
-    [string]$MargenVertical = '1.5cm',
+    [string]$MargenVertical = '1.2cm',
     [string]$MargenLomo = '1.5cm',
     [string]$MargenExterno = '1cm',
     [int]$Columnas = 1,
+    [ValidateSet('vertical', 'apaisado')]
+    [string]$Orientacion = 'vertical',
     [switch]$SinEncabezado,
-    [switch]$Verify
+    [switch]$Verify,
+    [Alias('h', 'help')]
+    [switch]$Ayuda
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ($Ayuda) {
+    Write-Host @'
+
+generar-pdf - pipeline canonico de PDF (pandoc + Chrome headless, determinista)
+
+USO
+  generar-pdf                      todos los .md de la carpeta actual
+  generar-pdf -Doc mi-documento    un documento (nombre sin .md; acepta lista separada por comas)
+  generar-pdf -Dir D:\ruta\otro    otra carpeta, sin moverte de la tuya
+  generar-pdf -Verify              ademas genera 2 veces y compara hashes
+
+PARAMETROS (todos opcionales)
+  -Doc <nombres>                  documentos a generar, sin extension.
+  -Dir <carpeta>                  carpeta de entrada y salida; default: la actual.
+  -Orientacion vertical|apaisado  default: vertical. apaisado: trifoliares y tableros.
+  -Columnas <1|2>                 default: 1; dos columnas solo a pedido explicito.
+  -MargenVertical <dist>          default: 1.2cm (arriba y abajo).
+  -MargenLomo <dist>              default: 1.5cm (modo espejado, el de fabrica).
+  -MargenExterno <dist>           default: 1cm (modo espejado, el de fabrica).
+  -MargenLateral <dist>           pasa a modo SIMETRICO (impresion de un solo lado; default 2.5cm).
+  -SinEncabezado                  quita el nombre del documento de la cabecera.
+  -Verify                         prueba de determinismo.
+  -h  (-Ayuda)                    esta ayuda.
+
+REGLAS FIJAS DEL ESTANDAR
+  La plantilla vive en esta carpeta: ningun proyecto lleva copias ni CSS propio.
+  Los .md NO usan LaTeX: los $ del texto son literales (pandoc no busca formulas).
+  El pie lleva la fecha del dia: dos corridas del MISMO dia dan PDF byte a byte iguales.
+  Trifoliar: caras con ::: {.cara .primera} en el .md + -Orientacion apaisado.
+
+'@
+    return
+}
 
 # Carpeta de trabajo: -Dir, o la carpeta actual del que invoca. Se resuelve a
 # ruta absoluta SIEMPRE, porque .NET (WriteAllText, ReadAllBytes) resuelve los
@@ -210,11 +265,23 @@ function Set-FechaDeterministica {
 function New-CssTemporal {
     param(
         [Parameter(Mandatory)][int]$Columnas,
+        [Parameter(Mandatory)][string]$Orientacion,
         [Parameter(Mandatory)][string]$Nombre,
         [Parameter(Mandatory)][string]$Destino
     )
 
     $css = [System.IO.File]::ReadAllText($CSS, [System.Text.Encoding]::UTF8)
+
+    # Orientacion del papel (contrato, punto 5): A4 vertical por defecto;
+    # 'A4 landscape' para apaisado (trifoliares, tableros). El lookbehind
+    # excluye 'font-size' y similares, que no son el tamano del papel.
+    $reTamano = '(?s)(@page\s*\{.*?)(?<![\w-])size:\s*[^;]+;'
+    $n = ([regex]::Matches($css, $reTamano)).Count
+    if ($n -ne 1) {
+        throw "En la plantilla se esperaba 1 tamano de papel en @page, se encontraron $n. Revisar la plantilla antes de parchearla."
+    }
+    $tamano = if ($Orientacion -eq 'apaisado') { 'A4 landscape' } else { 'A4' }
+    $css = [regex]::Replace($css, $reTamano, "`${1}size: $tamano;")
 
     # Los parches van por regex y verifican que hayan entrado (contrato con la
     # plantilla, ver .DESCRIPTION).
@@ -306,8 +373,16 @@ function New-CssTemporal {
     $css = [regex]::Replace($css, $reEspejado, $espejado)
 
     # Con una sola columna, llenar en orden evita el hueco que deja el balanceo.
+    # El parche es SOLO dentro de body (contrato, punto 4): otros contenedores
+    # multicolumna de la plantilla (las .cara del trifoliar) conservan su
+    # column-fill por defecto, equilibrado.
     if ($Columnas -eq 1) {
-        $css = [regex]::Replace($css, 'column-gap:\s*[^;]+;', "column-gap: 0.9cm;`n  column-fill: auto;")
+        $reGap = '(?s)(body\s*\{.*?)column-gap:\s*[^;]+;'
+        $n = ([regex]::Matches($css, $reGap)).Count
+        if ($n -ne 1) {
+            throw "En la plantilla se esperaba 1 column-gap dentro de body, se encontraron $n. Revisar la plantilla antes de parchearla."
+        }
+        $css = [regex]::Replace($css, $reGap, "`${1}column-gap: 0.9cm;`n  column-fill: auto;")
     }
 
     # Sin BOM: el CSS se enlaza tal cual y un BOM al principio de un archivo CSS
@@ -332,10 +407,14 @@ function Invoke-GenerarPdf {
     $tmpCss  = Join-Path $Destino $tmpCssNombre
     $tmpHtml = Join-Path $Destino $tmpHtmlNombre
     try {
-        New-CssTemporal -Columnas $Columnas -Nombre $Nombre -Destino $tmpCss
+        New-CssTemporal -Columnas $Columnas -Orientacion $Orientacion -Nombre $Nombre -Destino $tmpCss
 
+        # -tex_math_dollars: los markdown de esta familia NO usan LaTeX. Sin
+        # esto, pandoc interpreta pares de $ del texto (precios, referencias
+        # $A$1 de Excel) como formula TeX y se traga el tramo entre ellos
+        # (defecto medido 2026-10-18 en AUAG: una tabla entera corrompida).
         pandoc (Join-Path $Destino "$Nombre.md") `
-            --from=markdown+task_lists+hard_line_breaks `
+            --from=markdown+task_lists+hard_line_breaks-tex_math_dollars `
             --standalone `
             --css=$tmpCssNombre `
             --variable="pagetitle:$Nombre" `
