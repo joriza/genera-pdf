@@ -98,7 +98,28 @@ Con `-Verify` el script genera cada PDF dos veces y compara los hashes SHA256.
 generar-pdf.ps1   script principal (pipeline: pandoc → chrome → normalizar)
 plantilla-pdf.css plantilla canónica del PDF
 README.md        este archivo
+legacy/          copia de respaldo de la plantilla anterior (ver abajo)
 ```
+
+## Respaldo de la plantilla anterior
+
+La carpeta `legacy/` conserva una copia de `custom-markdown.css`, la plantilla
+que se usaba con el método anterior (wkhtmltopdf / impresión de urgencia). Se
+guardó por estos motivos:
+
+- **Impresión de urgencia** — algún proyecto la utiliza en otra aplicación
+  para un caso de impresión urgente, fuera del pipeline canónico.
+- **Respaldo fuera del equipo** — copia de seguridad de la plantilla histórica,
+  por si hace falta restaurarla o compararla con la nueva.
+
+La copia es **idéntica** (mismo hash SHA-256) que el original de
+`D:\tmp-docencia\custom-markdown.css`. No es la plantilla activa: la canónica
+es `plantilla-pdf.css`, y ningún proyecto debe usar la de `legacy/` como CSS
+propio (el estándar es que la plantilla vive aquí, junto al script).
+
+La plantilla de `legacy/` es **histórica**: refleja el método anterior, con sus
+propias convenciones (colores, tipografía, sin los parches inyectados por
+`generar-pdf.ps1`). No se mantiene ni se actualiza.
 
 ## Autor
 

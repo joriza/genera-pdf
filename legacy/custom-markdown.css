@@ -1,0 +1,102 @@
+/* --- Estilos para Código en Línea General --- */
+/* Aplica estilo a elementos <code> que NO son bloques de código (<pre>) ni están resaltados por hljs */
+:not(pre):not(.hljs) > code {
+  color: #333333;           /* Texto gris oscuro (casi negro, suave) */
+  background-color: #f0f0f0; /* Fondo gris muy, muy claro (sutilmente diferente del blanco) */
+  font-weight: bold;        /* Negrita para destacar sin añadir color */
+  padding: 0.2em 0.4em;     /* Añade un poco de espacio alrededor del texto */
+  border-radius: 3px;       /* Esquinas ligeramente redondeadas para un aspecto más suave */
+  /* font-style: italic; */ /* Cursiva comentada si no se desea */
+}
+
+/* --- Estilos para Títulos y Subtítulos --- */
+
+/* Título de Nivel 2 (## en Markdown -> <h2>) */
+h2 {
+  color: #1a5276;          /* Azul oscuro principal */
+  font-size: 1.5em;        /* Ligeramente más pequeño */
+  font-weight: bold;
+  border-bottom: 2px solid #aeb6bf;
+  padding-bottom: 0.4em;
+  margin-top: 1.2em;       /* REDUCIDO: Antes 2.5em */
+  margin-bottom: 0.6em;
+}
+
+/* Título de Nivel 3 (### en Markdown -> <h3>) */
+h3 {
+  color: #2874a6;          /* Un azul medio */
+  font-size: 1.3em;        /* Ligeramente más pequeño */
+  font-weight: bold;
+  border-bottom: 1px solid #d0d3d4;
+  padding-bottom: 0.3em;
+  margin-top: 1.0em;       /* REDUCIDO: Antes 2em */
+  margin-bottom: 0.5em;
+}
+
+/* Título de Nivel 4 (#### en Markdown -> <h4>) */
+h4 {
+  color: #34495e;          /* Un gris azulado oscuro */
+  font-size: 1.1em;        /* Ligeramente más pequeño */
+  font-weight: bold;
+  margin-top: 0.8em;       /* REDUCIDO: Antes 1.5em */
+  margin-bottom: 0.4em;
+}
+
+/* Título de Nivel 5 (##### en Markdown -> <h5>) */
+h5 {
+  color: #34495e;          /* Se iguala a h4 */
+  font-size: 1.1em;        /* Se iguala a h4 */
+  font-weight: bold;       /* Se iguala a h4 */
+  margin-top: 0.8em;       /* Se iguala a h4 */
+  margin-bottom: 0.4em;    /* Se iguala a h4 */
+}
+
+/* Título de Nivel 6 (###### en Markdown -> <h6>) */
+h6 {
+  color: #34495e;          /* Se iguala a h4 */
+  font-size: 0.5em;        /* Se iguala a h4 */
+  font-weight: bold;       /* Se iguala a h4 */
+  margin-top: 0.8em;       /* Se iguala a h4 */
+  margin-bottom: 0.4em;    /* Se iguala a h4 */
+}
+
+
+/* --- Prevalencia de Estilos: Títulos Anulan Completamente `code` --- */
+/* Esto asegura que cualquier `code` dentro de un h1, h2, h3, h4, h5 o h6 adopte el estilo del título,
+    anulando explícitamente cualquier estilo de `code` general. */
+h1 code, /* Incluido h1 por si acaso */
+h2 code,
+h3 code,
+h4 code,
+h5 code, /* Añadido para que h5 tenga prioridad sobre code */
+h6 code { /* Añadido para que h6 tenga prioridad sobre code */
+  color: inherit !important;           /* Fuerza heredar el color del título, !important para máxima prevalencia */
+  background-color: transparent !important; /* Elimina el fondo del código en línea */
+  font-weight: inherit !important;         /* Hereda el peso de fuente del título */
+  font-style: inherit !important;          /* Hereda el estilo de fuente del título */
+  text-decoration: inherit !important;     /* Hereda la decoración de texto */
+  padding: 0 !important;                   /* Elimina el padding extra */
+  border: none !important;                 /* Asegura que no haya borde */
+  border-radius: 0 !important;             /* Elimina el border-radius */
+  white-space: normal !important;          /* Permite el salto de línea normal */
+  word-break: normal !important;           /* Permite el salto de palabra normal */
+  line-height: inherit !important;         /* Hereda la altura de línea */
+}
+
+
+/* --- Estilos para Enlaces (como "(Windows)" y "(Linux)" en la imagen si son enlaces) --- */
+a {
+  color: #007bff;          /* Azul estándar para enlaces */
+  text-decoration: none;   /* Elimina el subrayado por defecto */
+}
+
+a:hover {
+  text-decoration: underline; /* Subraya al pasar el ratón */
+}
+
+/* --- Estilos generales --- */
+body {
+  font-family: "Arial", "Helvetica", sans-serif; /* Mantiene la tipografía especificada en el archivo */
+  font-size: 11pt;                /* Define el tamaño de la letra general a 11 puntos */
+  line-height: 1.5;                /* Establece el interlineado sencillo (100% del tamaño del texto) */
+}
