@@ -32,7 +32,7 @@ no usan LaTeX, por regla del estándar.
 # todos los .md de la carpeta actual
 .\generar-pdf.ps1
 
-# un solo documento (nombre sin .md; acepta lista separada por comas)
+# un solo documento (nombre sin .md; para varios ver «Varios documentos con -Doc»)
 .\generar-pdf.ps1 -Doc clase-1
 
 # otra carpeta, sin moverte de la tuya
@@ -49,11 +49,34 @@ Los `.md` de entrada y los `.pdf` de salida van a la misma carpeta (la actual,
 o la de `-Dir`). Los archivos temporales (`_gen.tmp.html`, `_gen.tmp.css`) se
 borran siempre, incluso si el script falla.
 
+### Qué archivos se convierten
+
+Solo los `.md` de **primer nivel** de la carpeta (`Get-ChildItem -Filter
+*.md`, no recursivo): las subcarpetas (`.atl/`, `odd/`, respaldos…) nunca se
+convierten. No hay flag de exclusión: para dejar afuera archivos (por ejemplo
+un `pdf-*.md` de reportes), pase en `-Doc` explícitamente los nombres que sí
+van.
+
+### Varios documentos con -Doc
+
+`-Doc` es un array de PowerShell: la lista por comas la separa el **parser de
+PowerShell**, no el script. Desde PowerShell van los nombres sin comillas
+(`-Doc clase-1,clase-2`). Desde Git Bash u otra shell, `"a,b,c"` entre comillas
+llega como **un solo nombre** y el script corta con «No existe a,b,c.md»: ahí
+hay que pasar el array con `-Command`:
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+  "& 'C:\Users\USER\herramientas\pdf\generar-pdf.ps1' \
+     -Dir 'D:\ruta\del\proyecto' -Verify \
+     -Doc 'doc-1','doc-2','doc-3'"
+```
+
 ## Parámetros
 
 | Parámetro | Valor por defecto | Notas |
 | --- | --- | --- |
-| `-Doc <nombres>` | todos los `.md` | Sin extensión; acepta lista por coma |
+| `-Doc <nombres>` | todos los `.md` de primer nivel | Sin extensión; varios como array de PowerShell (ver «Varios documentos con -Doc») |
 | `-Dir <carpeta>` | carpeta actual | Entrada y salida |
 | `-Orientacion vertical\|apaisado` | `vertical` | `apaisado` → `A4 landscape` (trifoliares, tableros) |
 | `-Columnas <1\|2\|3>` | `1` | 2 solo a pedido; 3 para trifoliar |
