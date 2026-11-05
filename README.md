@@ -91,6 +91,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
 ### Reglas fijas del estándar
 
 - La plantilla vive aquí: ningún proyecto lleva copias ni CSS propio.
+- **Código numerado y con fondo**: los bloques de código llevan números de
+  línea (filtro `numerar-lineas.lua` + regla en la plantilla, verde firme sin
+  subrayado) sobre un fondo gris muy tenue que separa el código del texto
+  corrido; sirve de referencia al copiar el código a mano. Funciona también
+  en bloques sin lenguaje declarado; los números forman parte de la capa de
+  texto del PDF (se copian junto con el código).
 - Los `.md` **no usan LaTeX**: los `$` del texto son literales.
 - El pie lleva la fecha del día (ISO-8601, solo fecha): dos corridas del **mismo
   día** dan PDF byte a byte iguales.
@@ -118,10 +124,11 @@ Con `-Verify` el script genera cada PDF dos veces y compara los hashes SHA256.
 ## Estructura
 
 ```
-generar-pdf.ps1   script principal (pipeline: pandoc → chrome → normalizar)
-plantilla-pdf.css plantilla canónica del PDF
-README.md        este archivo
-legacy/          copia de respaldo de la plantilla anterior (ver abajo)
+generar-pdf.ps1     script principal (pipeline: pandoc → chrome → normalizar)
+numerar-lineas.lua  filtro pandoc: números de línea en los bloques de código
+plantilla-pdf.css   plantilla canónica del PDF
+README.md          este archivo
+legacy/            copia de respaldo de la plantilla anterior (ver abajo)
 ```
 
 ## Respaldo de la plantilla anterior

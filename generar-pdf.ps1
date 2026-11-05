@@ -162,6 +162,9 @@ PARAMETROS (todos opcionales)
 REGLAS FIJAS DEL ESTANDAR
   La plantilla vive en esta carpeta: ningun proyecto lleva copias ni CSS propio.
   Los .md NO usan LaTeX: los $ del texto son literales (pandoc no busca formulas).
+  Los bloques de codigo llevan numeros de linea (numerar-lineas.lua + plantilla):
+  verde firme, sin subrayado, sobre fondo gris tenue; referencia al copiar el
+  codigo a mano.
   El pie lleva la fecha del dia: dos corridas del MISMO dia dan PDF byte a byte iguales.
   Trifoliar: caras con ::: {.cara .primera} en el .md + -Orientacion apaisado.
 
@@ -204,6 +207,13 @@ if ($Columnas -lt 1 -or $Columnas -gt 3) {
 $CSS = Join-Path $PSScriptRoot 'plantilla-pdf.css'
 if (-not (Test-Path -LiteralPath $CSS)) {
     throw "No se encontro la plantilla en $CSS. Vive junto a este script."
+}
+
+# Filtro Lua que numerar las lineas de los bloques de codigo: vive junto a la
+# plantilla por la misma regla del estandar (ningun proyecto lleva copias).
+$LUA = Join-Path $PSScriptRoot 'numerar-lineas.lua'
+if (-not (Test-Path -LiteralPath $LUA)) {
+    throw "No se encontro el filtro de numeros de linea en $LUA. Vive junto a este script."
 }
 
 $Docs = if ($PSBoundParameters.ContainsKey('Doc')) {
@@ -416,6 +426,7 @@ function Invoke-GenerarPdf {
         pandoc (Join-Path $Destino "$Nombre.md") `
             --from=markdown+task_lists+hard_line_breaks-tex_math_dollars `
             --standalone `
+            --lua-filter=$LUA `
             --css=$tmpCssNombre `
             --variable="pagetitle:$Nombre" `
             -o $tmpHtml

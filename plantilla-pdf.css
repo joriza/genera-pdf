@@ -23,9 +23,10 @@
      5. size del @page ................ -Orientacion (vertical por defecto;
         apaisado para trifoliares y tableros).
    ESTATICO (no se toca por proyecto): tipografia y tamanos, colores,
-   tablas, reglas de corte, reseteo de margenes propios de Blink, y el pie
-   con contador de paginas. Cambiar algo de esto es un cambio de ESTANDAR:
-   se hace aqui una vez y alcanza a todos los PDF futuros.
+   tablas, numeros de linea del codigo y su fondo tenue, reglas de corte,
+   reseteo de margenes propios de Blink, y el pie con contador de paginas. Cambiar
+   algo de esto es un cambio de ESTANDAR: se hace aqui una vez y alcanza
+   a todos los PDF futuros.
 
    A nivel lector (script, no CSS): el markdown se lee SIN matematica TeX
    (-tex_math_dollars desactivado desde 2026-10-18). Los markdown de esta
@@ -156,6 +157,44 @@ a:hover { text-decoration: underline; }
   padding: 0.2em 0.4em;
   border-radius: 3px;
 }
+
+/* Numeros de linea en los bloques de codigo. Con el filtro numerar-lineas.lua
+   (numberLines de pandoc), cada linea entra con un ancla <a> cuyo aria-label
+   es el numero: el numero visible sale de aca como contenido de ::before,
+   fuera del texto resaltado. Verde firme y sin subrayado: el verde apagado
+   #6a9955 (pensado para fondo oscuro) se ve gris sobre papel, leccion medida
+   en el corpus LSO. Mismo selector que la hoja embebida de pandoc para
+   superar su especificidad; el text-decoration es seguro extra. */
+pre.sourceCode > code.sourceCode > span > a:first-child::before {
+  content: attr(aria-label);
+  color: #2e7d32;
+  margin-right: 0.8em;
+  text-decoration: none;
+}
+
+/* Fondo tenue para los bloques de codigo: separa el codigo del texto corrido
+   sin bordes. Gris neutro muy claro, mas claro que el inline (#f0f0f0) para
+   conservar jerarquia. Blink pinta el fondo del pre entero incluso cuando el
+   bloque corta entre paginas (wkhtmltopdf no podia: defecto del motor viejo). */
+pre.sourceCode {
+  background: #f5f5f5;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+
+/* El CSS embebido de pandoc dibuja el canillon de numeros FUERA de la caja
+   del pre (margin-left 3em, borde izquierdo y spans corridos left: -4em):
+   los numeros caen en ese margen, sobre el blanco de la hoja, fuera de
+   cualquier fondo. Se anula el corrimiento y el numero pasa a fluir en
+   linea al inicio de cada una, dentro de la caja: asi el fondo y los
+   numeros viven en el mismo bloque. El color y el ancho del numero siguen
+   siendo de nuestra regla ::before de arriba. */
+pre.numberSource {
+  margin-left: 0;
+  border-left: none;
+  padding-left: 0;
+}
+pre.numberSource code > span { left: auto; }
 
 table {
   border-collapse: collapse;
